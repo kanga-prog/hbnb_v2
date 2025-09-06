@@ -1,8 +1,8 @@
 import { useState } from "react";
-import API from "../../services/api"; 
+import API from "../../services/api";
 import StarRating from "../common/StarRating";
 
-export default function ReviewForm({ placeId, onReviewAdded }) {
+export default function ReviewForm({ place_Id, onReviewAdded }) {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(5);
   const [error, setError] = useState("");
@@ -19,8 +19,8 @@ export default function ReviewForm({ placeId, onReviewAdded }) {
       }
 
       const res = await API.post(
-        `/places/${placeId}/reviews`,
-        { comment, rating }, 
+        `/places/${place_Id}/reviews`,
+        { comment, rating },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -44,27 +44,81 @@ export default function ReviewForm({ placeId, onReviewAdded }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginTop: "2rem" }}>
-      <h3>Laisser un avis :</h3>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        marginTop: "2rem",
+        padding: "1.5rem",
+        border: "1px solid #333",
+        borderRadius: "8px",
+        backgroundColor: "#fafafa",
+        maxWidth: "600px",
+      }}
+    >
+      <h3 style={{ marginBottom: "1rem", color: "#000" }}>Laisser un avis :</h3>
 
-      {/* 🔹 étoiles interactives */}
+      {/* Bloc d'erreur esthétique */}
+      {error && (
+        <div
+          style={{
+            border: "1px solid #333",
+            backgroundColor: "#f0f0f0",
+            color: "#000",
+            padding: "0.75rem 1rem",
+            borderRadius: "5px",
+            marginBottom: "1rem",
+            fontWeight: "500",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Étoiles interactives */}
       <StarRating rating={rating} setRating={setRating} />
 
-      <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
-        <label>
+      <div style={{ margin: "1rem 0" }}>
+        <label
+          style={{ display: "block", marginBottom: "0.5rem", color: "#000" }}
+        >
           Commentaire :
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={4}
-            style={{ width: "100%" }}
-            placeholder="Votre avis ici..."
-          />
         </label>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={4}
+          style={{
+            width: "100%",
+            padding: "0.5rem",
+            borderRadius: "5px",
+            border: "1px solid #333",
+            fontFamily: "inherit",
+            fontSize: "1rem",
+            color: "#000",
+            backgroundColor: "#fff",
+            resize: "vertical",
+          }}
+          placeholder="Votre avis ici..."
+        />
       </div>
 
-      <button type="submit">Envoyer</button>
+      <button
+        type="submit"
+        style={{
+          padding: "0.6rem 1.2rem",
+          borderRadius: "5px",
+          border: "none",
+          backgroundColor: "#333",
+          color: "#fff",
+          cursor: "pointer",
+          fontWeight: "500",
+          transition: "background-color 0.2s ease",
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#555")}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#333")}
+      >
+        Envoyer
+      </button>
     </form>
   );
 }

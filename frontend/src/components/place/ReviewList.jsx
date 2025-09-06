@@ -4,7 +4,7 @@ import API from "../../services/api";
 import StarRating from "../common/StarRating";
 
 
-const ReviewList = forwardRef(({ placeId }, ref) => {
+const ReviewList = forwardRef(({ place_Id }, ref) => {
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState("");
   const userId = localStorage.getItem("user_id"); // ✅ id du user connecté
@@ -12,13 +12,13 @@ const ReviewList = forwardRef(({ placeId }, ref) => {
   // 🔹 fetchReviews mémorisé avec useCallback
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await API.get(`/places/${placeId}/reviews`);
+      const res = await API.get(`/places/${place_Id}/reviews`);
       setReviews(res.data);
     } catch (err) {
       console.error("Erreur fetch reviews:", err);
       setError("Erreur chargement avis.");
     }
-  }, [placeId]);
+  }, [place_Id]);
 
   // 🔹 appel initial
   useEffect(() => {
@@ -34,7 +34,7 @@ const ReviewList = forwardRef(({ placeId }, ref) => {
     if (!window.confirm("Supprimer cet avis ?")) return;
     try {
       const token = localStorage.getItem("token");
-      await API.delete(`/places/${placeId}/reviews/${reviewId}`, {
+      await API.delete(`/places/${place_Id}/reviews/${reviewId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));

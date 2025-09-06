@@ -1,3 +1,4 @@
+# app/routes/reservations.py
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import request
@@ -5,24 +6,29 @@ from app.facades.reservation_facade import ReservationFacade
 
 api = Namespace('reservations', description='Endpoints related to reservations')
 
-reservation_model = api.model('Reservation', {
-    'id': fields.Integer(readOnly=True),
-    'place_id': fields.Integer(required=True),
-    'user_id': fields.Integer(readOnly=True),
+# ✅ Modèle d’entrée (ce que le frontend envoie)
+reservation_input = api.model('ReservationInput', {
+    'place_id': fields.Integer(required=True, description="ID du lieu à réserver"),
     'start_datetime': fields.String(required=True, description="Format: YYYY-MM-DDTHH:MM:SS"),
     'end_datetime': fields.String(required=True, description="Format: YYYY-MM-DDTHH:MM:SS")
+})
+
+# ✅ Modèle de sortie (ce que l’API renvoie)
+reservation_output = api.inherit('ReservationOutput', reservation_input, {
+    'id': fields.Integer(readOnly=True),
+    'user_id': fields.Integer(readOnly=True),
 })
 
 
 @api.route('/')
 class ReservationList(Resource):
-    @api.marshal_list_with(reservation_model)
+    @api.marshal_list_with(reservation_output)
     def get(self):
         """List all reservations"""
         return ReservationFacade.get_all_reservations()
 
-    @api.expect(reservation_model, validate=True)
-    @api.marshal_with(reservation_model, code=201)
+    @api.expect(reservation_input, validate=True)
+    @api.marshal_with(reservation_output, code=201)
     @jwt_required()
     def post(self):
         """Create a new reservation"""
@@ -44,7 +50,7 @@ class ReservationList(Resource):
 @api.route('/<int:id>')
 @api.response(404, 'Reservation not found')
 class ReservationDetail(Resource):
-    @api.marshal_with(reservation_model)
+    @api.marshal_with(reservation_output)
     def get(self, id):
         """Get reservation by ID"""
         reservation = ReservationFacade.get_reservation_by_id(id)
@@ -60,8 +66,8 @@ class ReservationDetail(Resource):
             api.abort(404, "Reservation not found")
         return '', 204
 
-    @api.expect(reservation_model)
-    @api.marshal_with(reservation_model)
+    @api.expect(reservation_input)
+    @api.marshal_with(reservation_output)
     def put(self, id):
         """Update a reservation"""
         data = request.get_json()
@@ -77,21 +83,17 @@ class ReservationDetail(Resource):
 
 
 @api.route('/place/<int:place_id>')
-@api.response(404, 'No reservations for this place')
 class ReservationByPlace(Resource):
-    @api.marshal_list_with(reservation_model)
+    @api.marshal_list_with(reservation_output)
     def get(self, place_id):
         """Get reservations by place ID"""
         reservations = ReservationFacade.get_reservations_by_place(place_id)
-        if not reservations:
-            api.abort(404, "No reservations found for this place")
-        return reservations
+        return reservations or []  # ✅ on renvoie [] au lieu de 404
 
 
 @api.route('/user/<int:user_id>')
-@api.response(404, 'No reservations for this user')
 class ReservationByUser(Resource):
-    @api.marshal_list_with(reservation_model)
+    @api.marshal_list_with(reservation_output)
     def get(self, user_id):
         """Get reservations by user ID"""
         reservations = ReservationFacade.get_reservations_by_user(user_id)
