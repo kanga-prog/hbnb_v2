@@ -1,8 +1,12 @@
 # routes/user.py
 from flask_restx import Namespace, Resource, fields
-from flask import request
+from flask import request,current_app
 from app.facades.user_facade import UserFacade
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import secure_filename
+from app.extensions import db
+from app.models import User
+import os
 
 api = Namespace('users', description='Endpoints related to users')
 
@@ -86,23 +90,29 @@ class UserDetail(Resource):
 class UserAvatar(Resource):
     @jwt_required()
     def post(self, user_id):
+        # Vérifier l'utilisateur
         user = User.query.get(user_id)
         if not user:
             return {"message": "User not found"}, 404
+
+        # Vérifier le fichier
+        if 'avatar' not in request.files:
+            return {"message": "No file uploaded"}, 400
         
-        if 'file' not in request.files:
-            return {"message": "No file part"}, 400
-        
-        file = request.files['file']
+        file = request.files['avatar']
         if file.filename == '':
             return {"message": "No selected file"}, 400
-        
+
+        # Sauvegarder le fichier
         filename = secure_filename(file.filename)
-        upload_folder = os.path.join(current_app.root_path, "uploads/avatars")
+        upload_folder = os.path.join(current_app.root_path, "uploads", "avatars")
         os.makedirs(upload_folder, exist_ok=True)
-        file.save(os.path.join(upload_folder, filename))
-        
+        filepath = os.path.join(upload_folder, filename)
+        file.save(filepath)
+
+        # Mettre à jour le modèle
         user.avatar = f"/uploads/avatars/{filename}"
         db.session.commit()
-        return {"avatar": user.avatar}, 200
+
+        return {"url": user.avatar}, 201
 

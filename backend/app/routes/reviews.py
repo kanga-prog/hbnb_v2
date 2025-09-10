@@ -113,3 +113,15 @@ class ReviewDetail(Resource):
         db.session.delete(review)
         db.session.commit()
         return '', 204
+
+# ========================
+# /api/reviews/user/<user_id>
+# ========================
+@api.route('/user/<int:user_id>', strict_slashes=False)
+class ReviewsByUser(Resource):
+    @api.marshal_list_with(review_model)
+    def get(self, user_id):
+        """Get all reviews made by a specific user"""
+        reviews = Review.query.filter_by(user_id=user_id).all()
+        return reviews or []
+
