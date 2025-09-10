@@ -1,16 +1,19 @@
-import { useEffect, useState, useRef, useCallback } from "react"; 
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import ReviewForm from "../components/place/ReviewForm";
 import ReviewList from "../components/place/ReviewList";
 import ReservationForm from "../components/place/ReservationForm";
+import { getCurrentUser } from "../utils/auth"; // 🔑 récupère l'utilisateur connecté (selon ton utilitaire auth.js)
 
 export default function PlaceDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [place, setPlace] = useState(null);
   const [amenities, setAmenities] = useState([]);
   const [images, setImages] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null); // 👤 user connecté
   const reviewListRef = useRef(null);
 
   const loadReservations = useCallback(() => {
@@ -23,6 +26,9 @@ export default function PlaceDetail() {
   }, [id]);
 
   useEffect(() => {
+    // 🔑 on charge l'utilisateur courant
+    setCurrentUser(getCurrentUser());
+
     API.get(`/places/${id}/`)
       .then((res) => {
         setPlace(res.data);
@@ -41,6 +47,23 @@ export default function PlaceDetail() {
 
     loadReservations();
   }, [id, loadReservations]);
+
+  const handleDelete = async () => {
+    if (!window.confirm("Voulez-vous vraiment supprimer ce lieu ?")) return;
+
+    try {
+      await API.delete(`/places/${id}/`);
+      alert("Lieu supprimé avec succès !");
+      navigate("/"); // retour à la page d’accueil
+    } catch (err) {
+      console.error("Erreur suppression lieu:", err);
+      alert("Impossible de supprimer ce lieu.");
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/places/${id}/edit`);
+  };
 
   if (!place) return <p>Chargement...</p>;
 
@@ -90,6 +113,24 @@ export default function PlaceDetail() {
       {/* Avis */}
       <ReviewList ref={reviewListRef} place_Id={parseInt(id, 10)} />
       <ReviewForm place_Id={parseInt(id, 10)} onReviewAdded={() => reviewListRef.current?.refreshReviews()} />
+
+      {/* ✅ Boutons visibles seulement si user = propriétaire */}
+      {currentUser?.id === place.owner_id && (
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={handleEdit}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={handleDelete}
+            className="bg-red-500 text-white px-4 py-2 rounded"
+          >
+            Supprimer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

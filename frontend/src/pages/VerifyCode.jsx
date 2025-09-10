@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 function VerifyCode() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");

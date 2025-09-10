@@ -1,37 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function PlaceForm({ onSubmit, initialData = {} }) {
   const [formData, setFormData] = useState({
-    name: initialData.name || "",
-    description: initialData.description || "",
-    price_by_night: initialData.price_by_night || "",
-    location: initialData.location || "",
-    country: initialData.country || "",
-    town: initialData.town || "",
-    latitude: initialData.latitude || "",
-    longitude: initialData.longitude || "",
-    amenities: initialData.amenities || [],
+    id: null,
+    name: "",
+    description: "",
+    price_by_night: "",
+    location: "",
+    country: "",
+    town: "",
+    latitude: "",
+    longitude: "",
+    amenities: [],
   });
 
-  const [images, setImages] = useState([]); // 🖼️ gestion des images
+  const [images, setImages] = useState([]); // nouvelles images
+  const [existingImages, setExistingImages] = useState([]); // images backend
   const [error, setError] = useState("");
+
+  // ✅ Correction du useEffect pour éviter la boucle infinie
+  useEffect(() => {
+    if (!initialData || !initialData.id) return;
+
+    setFormData({
+      id: initialData.id || null,
+      name: initialData.name || "",
+      description: initialData.description || "",
+      price_by_night: initialData.price_by_night || "",
+      location: initialData.location || "",
+      country: initialData.country || "",
+      town: initialData.town || "",
+      latitude: initialData.latitude || "",
+      longitude: initialData.longitude || "",
+      amenities: initialData.amenities || [],
+    });
+
+    setExistingImages(
+      (initialData.images || []).map((img) =>
+        img.url
+          ? img.url
+          : `http://127.0.0.1:5000/uploads/places/${img}`
+      )
+    );
+  }, [initialData?.id]); // ✅ on dépend seulement de l'id
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAmenityChange = (e) => {
     const { value, checked } = e.target;
-    let updatedAmenities = [...formData.amenities];
-
-    if (checked) {
-      updatedAmenities.push(value);
-    } else {
-      updatedAmenities = updatedAmenities.filter((a) => a !== value);
-    }
-
-    setFormData({ ...formData, amenities: updatedAmenities });
+    setFormData((prev) => ({
+      ...prev,
+      amenities: checked
+        ? [...prev.amenities, value]
+        : prev.amenities.filter((a) => a !== value),
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -42,16 +67,9 @@ export default function PlaceForm({ onSubmit, initialData = {} }) {
     e.preventDefault();
     setError("");
 
-    // Validation minimale
-    if (!formData.name.trim()) {
-      setError("Le nom du lieu est obligatoire.");
-      return;
-    }
-
-    if (!formData.price_by_night || isNaN(Number(formData.price_by_night))) {
-      setError("Le prix par nuit doit être un nombre.");
-      return;
-    }
+    if (!formData.name.trim()) return setError("Le nom est obligatoire.");
+    if (!formData.price_by_night || isNaN(Number(formData.price_by_night)))
+      return setError("Le prix doit être un nombre.");
 
     try {
       await onSubmit({
@@ -59,7 +77,8 @@ export default function PlaceForm({ onSubmit, initialData = {} }) {
         price_by_night: Number(formData.price_by_night),
         latitude: formData.latitude ? Number(formData.latitude) : null,
         longitude: formData.longitude ? Number(formData.longitude) : null,
-        images, // fichiers
+        images,
+        existingImages,
       });
     } catch (err) {
       setError(err.response?.data?.message || "Erreur lors de l'envoi");
@@ -77,36 +96,79 @@ export default function PlaceForm({ onSubmit, initialData = {} }) {
         borderRadius: "8px",
       }}
     >
-      <h2>Créer / Modifier un lieu</h2>
-
+      <h2>{formData.id ? "Modifier un lieu" : "Créer un lieu"}</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <label>Nom du lieu *</label>
-      <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+      <label>Nom *</label>
+      <input
+        type="text"
+        name="name"
+        value={formData.name}
+        onChange={handleChange}
+        required
+      />
 
       <label>Description</label>
-      <textarea name="description" value={formData.description} onChange={handleChange} rows="4" />
+      <textarea
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        rows="4"
+      />
 
-      <label>Prix par nuit *</label>
-      <input type="number" name="price_by_night" value={formData.price_by_night} onChange={handleChange} required />
+      <label>Prix *</label>
+      <input
+        type="number"
+        name="price_by_night"
+        value={formData.price_by_night}
+        onChange={handleChange}
+        required
+      />
 
-      <label>Adresse / Localisation</label>
-      <input type="text" name="location" value={formData.location} onChange={handleChange} />
+      <label>Adresse</label>
+      <input
+        type="text"
+        name="location"
+        value={formData.location}
+        onChange={handleChange}
+      />
 
       <label>Pays</label>
-      <input type="text" name="country" value={formData.country} onChange={handleChange} />
+      <input
+        type="text"
+        name="country"
+        value={formData.country}
+        onChange={handleChange}
+      />
 
       <label>Ville</label>
-      <input type="text" name="town" value={formData.town} onChange={handleChange} />
+      <input
+        type="text"
+        name="town"
+        value={formData.town}
+        onChange={handleChange}
+      />
 
       <label>Latitude</label>
-      <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} />
+      <input
+        type="number"
+        step="any"
+        name="latitude"
+        value={formData.latitude}
+        onChange={handleChange}
+      />
 
       <label>Longitude</label>
-      <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} />
+      <input
+        type="number"
+        step="any"
+        name="longitude"
+        value={formData.longitude}
+        onChange={handleChange}
+      />
 
       <fieldset style={{ marginTop: "1rem" }}>
-        <legend>Amenities (facultatif)</legend>
+        <legend>Amenities</legend>
         {["wifi", "parking", "piscine"].map((a) => (
           <label key={a} style={{ display: "block" }}>
             <input
@@ -120,19 +182,55 @@ export default function PlaceForm({ onSubmit, initialData = {} }) {
         ))}
       </fieldset>
 
-      <label>Images du lieu</label>
-      <input type="file" multiple accept="image/*" onChange={handleFileChange} />
+      {/* Anciennes images */}
+      {existingImages.length > 0 && (
+        <div style={{ marginTop: "1rem" }}>
+          <h4>Images existantes :</h4>
+          <div
+            style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+          >
+            {existingImages.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt="place"
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <label>Ajouter des images</label>
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleFileChange}
+      />
 
       {images.length > 0 && (
         <div style={{ marginTop: "1rem" }}>
-          <h4>Aperçu :</h4>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <h4>Aperçu nouvelles images :</h4>
+          <div
+            style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+          >
             {Array.from(images).map((file, idx) => (
               <img
                 key={idx}
                 src={URL.createObjectURL(file)}
                 alt="preview"
-                style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px" }}
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
               />
             ))}
           </div>
@@ -140,7 +238,7 @@ export default function PlaceForm({ onSubmit, initialData = {} }) {
       )}
 
       <button type="submit" style={{ marginTop: "1rem" }}>
-        Enregistrer le lieu
+        {formData.id ? "Mettre à jour" : "Créer"}
       </button>
     </form>
   );

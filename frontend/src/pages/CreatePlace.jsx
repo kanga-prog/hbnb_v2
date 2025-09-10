@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PlaceForm from "../components/place/PlaceForm";
 import API, { createPlace } from "../services/api";
 
+
 const CreatePlace = () => {
   const navigate = useNavigate();
 
@@ -50,7 +51,7 @@ const CreatePlace = () => {
       }
 
       // 4️⃣ Redirection vers le détail du lieu
-      navigate(`/place/${placeId}`);
+      navigate(`/places/${placeId}`);
     } catch (err) {
       console.error("Erreur lors de la création :", err);
       alert(err.response?.data?.message || "Erreur lors de la création du lieu");

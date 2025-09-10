@@ -30,7 +30,7 @@ export const createPlace = async (placeData) => {
 
 export const uploadAvatar = async (userId, file) => {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("avatar", file);
   const token = localStorage.getItem("token");
   const res = await API.post(`/users/${userId}/avatar`, formData, {
     headers: {

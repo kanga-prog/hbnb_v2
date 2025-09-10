@@ -1,15 +1,20 @@
 // src/components/place/ReviewList.jsx
-import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+} from "react";
 import API from "../../services/api";
-import StarRating from "../common/StarRating";
-
+import ReviewCard from "./ReviewCard";
 
 const ReviewList = forwardRef(({ place_Id }, ref) => {
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState("");
-  const userId = localStorage.getItem("user_id"); // ✅ id du user connecté
+  const userId = localStorage.getItem("user_id"); // ✅ user connecté
 
-  // 🔹 fetchReviews mémorisé avec useCallback
+  // 🔹 fetchReviews mémorisé
   const fetchReviews = useCallback(async () => {
     try {
       const res = await API.get(`/places/${place_Id}/reviews`);
@@ -25,11 +30,12 @@ const ReviewList = forwardRef(({ place_Id }, ref) => {
     fetchReviews();
   }, [fetchReviews]);
 
-  // 🔹 expose refreshReviews() au parent via ref
+  // 🔹 expose refreshReviews() au parent
   useImperativeHandle(ref, () => ({
     refreshReviews: fetchReviews,
   }));
 
+  // 🔹 suppression review
   const handleDelete = async (reviewId) => {
     if (!window.confirm("Supprimer cet avis ?")) return;
     try {
@@ -44,71 +50,23 @@ const ReviewList = forwardRef(({ place_Id }, ref) => {
     }
   };
 
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div style={{ marginTop: "2rem" }}>
-      <h3>Avis des utilisateurs :</h3>
+    <div className="mt-6">
+      <h3 className="text-lg font-bold mb-4">Avis des utilisateurs :</h3>
+
       {reviews.length === 0 ? (
-        <p>Aucun avis pour ce lieu.</p>
+        <p className="text-gray-500">Aucun avis pour ce lieu.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
+        <ul className="space-y-4">
           {reviews.map((r) => (
-            <li
-              key={r.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "1rem",
-                marginBottom: "1rem",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "0.8rem",
-              }}
-            >
-              <img
-                src={r.user_avatar || "https://dummyimage.com/40x40/ccc/fff&text=User"}
-                alt={r.user_name}
-                style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "0.8rem" }}
-            />
-
-
-              <div style={{ flex: 1 }}>
-                <strong>{r.user_name || "Anonyme"}</strong>
-                <StarRating rating={r.rating} setRating={() => {}} /> {/* lecture seule */}
-                <p>{r.comment}</p>
-
-                {userId && parseInt(userId) === r.user_id && (
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <button
-                      onClick={() => handleDelete(r.id)}
-                      style={{
-                        background: "red",
-                        color: "white",
-                        border: "none",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        marginRight: "0.5rem",
-                      }}
-                    >
-                      Supprimer
-                    </button>
-                    <button
-                      style={{
-                        background: "orange",
-                        color: "white",
-                        border: "none",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Modifier
-                    </button>
-                  </div>
-                )}
-              </div>
+            <li key={r.id}>
+              <ReviewCard
+                review={r}
+                onDelete={handleDelete}
+                canDelete={userId && parseInt(userId) === r.user_id}
+              />
             </li>
           ))}
         </ul>

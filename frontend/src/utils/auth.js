@@ -1,15 +1,15 @@
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
 export function saveToken(token) {
-  localStorage.setItem('token', token);
+  localStorage.setItem("token", token);
 }
 
 export function getToken() {
-  return localStorage.getItem('token');
+  return localStorage.getItem("token");
 }
 
 export function logout() {
-  localStorage.removeItem('token');
+  localStorage.removeItem("token");
 }
 
 export function getCurrentUser() {
@@ -18,8 +18,16 @@ export function getCurrentUser() {
 
   try {
     const decoded = jwtDecode(token);
-    return decoded;
+
+    // Normalisation pour éviter les undefined
+    return {
+      id: decoded.sub,             // ✅ l’ID est dans "sub"
+      email: decoded.email || "",  // si tu ajoutes plus tard
+      name: decoded.username || "", // si tu ajoutes plus tard
+      ...decoded                   // on garde le reste (exp, iat…)
+    };
   } catch (err) {
+    console.error("Erreur décodage JWT :", err);
     return null;
   }
 }
